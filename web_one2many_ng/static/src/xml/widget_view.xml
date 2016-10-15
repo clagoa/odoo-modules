@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="One2ManyNG">     	
+        
+        <div class="dropdown">
+		  <button class="btn btn-default btn-xs dropdown-toggle" type="button" 
+		  		  id="dropdownMenu1" data-toggle="dropdown" 
+		  		  aria-haspopup="true" aria-expanded="false">
+		    <span class="caret"></span>
+		  </button>
+		  <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
+		    <t t-foreach="widget.actions" t-as="action">
+		    	<li>
+		    		<a href="#" t-att-id="action.id">
+		    			<t t-esc="action.string" />
+		    		</a>
+		    	</li>
+		    	<li role="separator" class="divider"
+		    		t-if="action.separator"></li>
+		    </t>
+		  </ul>
+		</div>
+    </t>
+    
+</templates>

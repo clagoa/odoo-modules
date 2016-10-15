@@ -1,0 +1,95 @@
+<section class="oe_container">
+    <div class="oe_row oe_spaced">
+        <div class="oe_span12">
+            <h2 class="oe_slogan">Acciones avanzadas sobre el campos One2Many</h2>
+        </div>
+        <div class="oe_span12">
+            <p class="oe_mt32">
+				Añadiendo el widget 'one2many_ng' a un campo podrás definir campos m2o para crear/eliminar registros de forma masiva ó acciones python arbitrarias sobre los registros seleccionados.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="oe_container oe_dark">
+    <div class="oe_row oe_spaced">
+        <h2 class="oe_slogan">¿Como funciona?</h2>
+        <div class="oe_span12">
+            <p class="oe_mt32">
+	            Debes indicar que el campo One2many debe utilizar el widget 'one2many_ng'
+	            <br/>
+	            <code>
+	            	&lt;field name="categoria_producto_rel_ids" widget="one2many_ng" /&gt;
+	            </code>
+	            <br/>
+	            Las acciones se deberána añadir como el atributo actions del nodo field.
+	            En cada acción se pueden definir las siguientes propiedades:<br/>
+	            	<strong>name</strong>: Nombre del método python del modelo relacionado del campo one2many a ejecutar<br/>
+	            	<strong>multiselect</strong>: Si se establece a "1", el método python recibirá el listado de registros seleccionados (del campo one2many). Será obligatorio seleccionar algun valorantes de ejecutar la acción.<br/>
+	            	<strong>string</strong>: Etiqueta de la acción<br/>
+	            	<strong>separator</strong>: Si se establece a "1" se añadirá un separador despuesde la acción.<br/>
+	            <br/>            
+	            <code>
+	            	&lt;field name="categoria_producto_rel_ids" 
+						   widget="one2many_ng"
+						   actions='[
+							   	{	
+							   		"name": "bulk_action3", 
+							   		"string": "Acción 3",
+							   		"multiselect": "1"
+							   	},
+							   	{
+							   		"name": "bulk_action4", 
+							   		"string": "Acción 4",
+							   		"multiselect": "1"
+							   	}
+						   ]'&gt;
+	            </code>
+	            <br/>
+	            Si se desean añadir acciones de añadir o eliminar de forma masiva se deberá añadir los atributos mass_add_field y/o mass_del_field en los campos m2o sobre los se se desee la acción.
+	            <br/>            
+	            <code>
+	            	&lt;field name="categoria_producto_rel_ids" widget="one2many_ng"&gt;
+		            	&lt;tree editable="Botton"&gt;
+							&lt;field name="producto_id" 
+								   mass_add_field="1"
+								   mass_del_field="1" /&gt;
+							&lt;field name="producto2_id" 
+								   mass_add_field="1" /&gt;
+							&lt;field name="producto3_id" 
+								   mass_add_field="1" /&gt;
+							&lt;field name="nombre_relacion" /&gt;
+							&lt;field name="fecha" /&gt;
+						&lt;/tree&gt;
+					&lt;/field&gt;
+	            </code>
+            	<br/>
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="oe_container oe_dark">
+    <div class="oe_row oe_spaced">
+        <h2 class="oe_slogan">Ejemplo de función Python para las acciones</h2>
+        <div class="oe_span6">
+            <p class="oe_mt32">
+@api.multi<br>
+def bulk_verify(self):<br>
+    &emsp;for record in self:<br>
+    &emsp;print record<br>
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="oe_container oe_dark">
+    <div class="oe_row oe_spaced">
+        <h2 class="oe_slogan">Screenshot </h2>
+        <div class="oe_span12">
+            <div class="oe_row_img oe_centered">
+                <img class="oe_picture oe_screenshot" src="sreenshot1.png">
+            </div>
+        </div>
+    </div>
+</section>
