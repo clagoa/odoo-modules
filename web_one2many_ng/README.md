@@ -1,5 +1,5 @@
 # web_one2many_ng
-Advanced actions on One2Many fields
+Advanced actions on One2Many fields 
 Adding the 'one2many_ng' widget to a One2many field you can define fields to create/delete records in bulk or python arbitrary actions on selected records.
 
 ## How it works?
