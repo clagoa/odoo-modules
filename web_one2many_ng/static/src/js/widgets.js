@@ -20,9 +20,9 @@ var One2ManyNg = FieldOne2Many.extend({
 	 * @param	field_manager	obj
 	 * @param	node			obj
 	 * */
-	init : function(field_manager, node) {		
+	init : function(field_manager, node) {
 		this._super.apply(this, arguments);		
-									
+
 		this.id = _.uniqueId('one2manyng_');
 		this.init_actions(node);	
 	},		
@@ -40,13 +40,17 @@ var One2ManyNg = FieldOne2Many.extend({
 	 */
 	init_actions: function(node) {
 		var self = this;
+
 		self.actions = [];
-		if (node && node.attrs && node.attrs.actions) {
-			self.actions = JSON.parse(node.attrs.actions);				
-			_.each(self.actions, function(action) {
-				action.id = _.uniqueId('one2manyng_button_');
-			});						
-		}
+        if (self.options.actions) {
+            self.actions = self.options.actions;
+        }else if (node && node.attrs && node.attrs.actions) {
+			self.actions = JSON.parse(node.attrs.actions);
+        }
+
+        _.each(self.actions, function(action) {
+            action.id = _.uniqueId('one2manyng_button_');
+        });
 	},
 	
 	/* Se sobreescribe el método para suscribirnos al cambio de modo de la
@@ -60,42 +64,76 @@ var One2ManyNg = FieldOne2Many.extend({
         self.check_actual_mode();
         
         self.view_list = self.get_list_view(self.views);
-        
-        // mass add        
-		var mass_add_fields = self.get_mass_add_fields(self.view_list);
-		var add_actions = [];
-		_.each(mass_add_fields, function(field){
-			add_actions.push({
-				'id': _.uniqueId('one2manyng_add_many_'),
-				'multiselect': 0,
-				'local': 1,
-				'name': 'do_add_many_records',
-				'string': _t('Add ') + field.string.toLowerCase() + '(s)',
-				'mass_add_field': field
-			});
-		});	
-		if(!_.isEmpty(add_actions)) {
-			add_actions[add_actions.length-1].separator = true;	
-		}		
-		
-		// mass del        
-		var mass_del_fields = self.get_mass_del_fields(self.view_list);
-		var del_actions = [];
-		_.each(mass_del_fields, function(field){
-			del_actions.push({
-				'id': _.uniqueId('one2manyng_del_many_'),
-				'multiselect': 0,
-				'local': 1,
-				'name': 'do_del_many_records',
-				'string': _t('Del ') + field.string.toLowerCase() + '(s)',
-				'mass_del_field': field
-			});
-		});	
-		if(!_.isEmpty(del_actions)){
-			del_actions[del_actions.length-1].separator = true;	
-		}		
-		
-		self.actions = _.union(add_actions, del_actions, self.actions);		
+
+        if (self.options.add_mode == 'link') {
+            var link_actions = [];
+
+            self.field.name = self.name;
+
+            // add
+            link_actions.push({
+                'id': _.uniqueId('one2manyng_link_many_'),
+                'multiselect': 0,
+                'local': 1,
+                'name': 'do_add_link_many_records',
+                'string': _t('Add ') + self.field.string.toLowerCase(),
+                'mass_add_field': self.field,
+                'reload': '0',
+                'separator': 1
+            });
+
+            // del
+            link_actions.push({
+                'id': _.uniqueId('one2manyng_link_many_'),
+                'multiselect': 0,
+                'local': 1,
+                'name': 'do_del_link_many_records',
+                'string': _t('Del ') + self.field.string.toLowerCase(),
+                'mass_del_field': self.field,
+                'reload': '1',
+                'separator': 1
+            });
+
+            self.actions = _.union(link_actions, self.actions);
+        }else{
+            // mass add
+            var mass_add_fields = self.get_mass_add_fields(self.view_list);
+            var add_actions = [];
+            _.each(mass_add_fields, function(field){
+                add_actions.push({
+                    'id': _.uniqueId('one2manyng_add_many_'),
+                    'multiselect': 0,
+                    'local': 1,
+                    'name': 'do_add_many_records',
+                    'string': _t('Add ') + field.string.toLowerCase() + '(s)',
+                    'mass_add_field': field,
+                    'reload': '0' /// Solo refresca el control en el web client
+                });
+            });
+            if(!_.isEmpty(add_actions)) {
+                add_actions[add_actions.length-1].separator = true;
+            }
+
+            // mass del
+            var mass_del_fields = self.get_mass_del_fields(self.view_list);
+            var del_actions = [];
+            _.each(mass_del_fields, function(field){
+                del_actions.push({
+                    'id': _.uniqueId('one2manyng_del_many_'),
+                    'multiselect': 0,
+                    'local': 1,
+                    'name': 'do_del_many_records',
+                    'string': _t('Del ') + field.string.toLowerCase() + '(s)',
+                    'mass_del_field': field,
+                    'reload': '0' /// Solo refresca el control en el web client
+                });
+            });
+            if(!_.isEmpty(del_actions)){
+                del_actions[del_actions.length-1].separator = true;
+            }
+
+            self.actions = _.union(add_actions, del_actions, self.actions);
+        }
 	},				
 		
 	/* Función suscriptora del cambio de modo. Cambia el modo de lista a
@@ -173,7 +211,7 @@ var One2ManyNg = FieldOne2Many.extend({
 		/// Acciones locales (métodos js sobre del widget)
 		if(action.local){
 			self[action.name](action, selected_ids).done(function(){
-				self.reload_current_view();
+			    self.do_action_refresh(action);
 			});				
 			
 		/// Acciones de servidor (métodos python del modelo)
@@ -183,20 +221,29 @@ var One2ManyNg = FieldOne2Many.extend({
 				if (confirm(_t('Changes will be saved. Do you want to continue?'))) {
 					self.save_and_reload_keeping_selected().done(function(selected_ids){
 						self.do_server_action_selected(action, selected_ids).done(function(){
-							if (action.reload === '1') {														
-								self.view.reload();				
-							}
+						    self.do_action_refresh(action);
 						});
 					});	
 				}
 			}else{
 				self.do_server_action_selected(action, selected_ids).done(function(){
-					if (action.reload === '1') {														
-						self.view.reload();				
-					}
+				    self.do_action_refresh(action);
 				});
 			}											
 		}				
+	},
+
+	do_action_refresh: function(action) {
+	    var self = this;
+
+	    /// Recarga contra el servidor
+        if (action.reload === '1') {
+            self.view.reload();
+
+        /// Refresco del control en cliente
+        }else{
+            self.reload_current_view();
+        }
 	},
 	
 	/*
@@ -208,12 +255,15 @@ var One2ManyNg = FieldOne2Many.extend({
 	do_server_action_selected: function(action, selected_ids) {
 		var self = this;
 		var defer = $.Deferred();
-		
-		var model_obj = new Model(self.dataset.model); 										
+
+		var model_obj = new Model(self.dataset.model);
 		model_obj.call(action.name, [ selected_ids ], {
-			context : self.dataset.context
-		}).then(function(result) {						
-			if (result && (result.type == "ir.actions.act_window")) {	
+			context : new data.CompoundContext(
+			    self.dataset.context,
+			    action.context || {}
+			)
+		}).then(function(result) {
+			if (result && (result.type == "ir.actions.act_window")) {
 				self.do_action_window(result).done(function() {
 					defer.resolve();
 				});
@@ -388,13 +438,13 @@ var One2ManyNg = FieldOne2Many.extend({
             alternative_form_view: action.mass_add_field.views ? action.mass_add_field.views.form 
             										    	   : undefined,
             no_create: self.options.no_create,
-            on_selected: function(element_ids) {   
+            on_selected: function(element_ids) {
             	var defer_list = [];
             	_.each(element_ids, function(id){
-            		var data = {};		
-            		data[action.mass_add_field.name] = id;            		
+            		var data = {};
+            		data[action.mass_add_field.name] = id;
             		defer_list.push(self.data_create(data));
-            	});   
+            	});
             	$.when.apply($, defer_list).done(function(){
             		defer.resolve();
             	});
@@ -461,7 +511,109 @@ var One2ManyNg = FieldOne2Many.extend({
 		
 		return defer.promise();
 	},
-	
+
+	/*
+	 * Ejecuta la acción de enlazar registros de forma masiva
+	 *
+	 * @param	action	obj		Acción de añadir a ejecutar
+	 */
+	do_add_link_many_records: function(action) {
+		var self = this;
+		var defer = $.Deferred();
+
+		if (!action || !action.mass_add_field) {
+			throw _t('You should setup a many2one mass_add_field.');
+		}
+
+        var field_selected_ids = self.dataset.ids;
+        new common.SelectCreateDialog(this, {
+            res_model: action.mass_add_field.relation,
+            domain: new data.CompoundDomain(
+                action.mass_add_field.domain,
+            	["!", ["id", "in", field_selected_ids],
+            	 [action.mass_add_field.relation_field, "=", false]]
+            ),
+            context: {},
+            title: _t("Link: ") + action.mass_add_field.string,
+            alternative_form_view: action.mass_add_field.views ? action.mass_add_field.views.form : undefined,
+            no_create: self.options.no_create,
+            on_selected: function(element_ids) {
+                self.data_link_multi(element_ids).done(function(){
+                    defer.resolve();
+                });
+            }
+        }).open();
+
+        return defer.promise();
+	},
+
+	/*
+	 * Ejecuta la acción de desenlazar de forma masiva
+	 *
+	 * @param	action	obj		Acción de eliminar a ejecutar
+	 */
+	do_del_link_many_records: function(action, selected_ids) {
+		var self = this;
+		var defer = $.Deferred();
+
+		if (!action || !action.mass_del_field) {
+			throw _t('You should setup a many2one mass_del_field.');
+		}
+
+		/// Si ya se han seleccionado registros para eliminar, se eliminan
+		if (selected_ids && !_.isEmpty(selected_ids)) {
+			if (confirm(_t('Are you sure you want to unlink selected rows?'))) {
+			    self.do_unlink_action(action, selected_ids).done(function(){
+			        defer.resolve();
+			    });
+			}
+
+		/// Si no se han seleccionado registros se abre el formulario para
+		/// seleccionar los registros que se quieren eliminar.
+		} else {
+			var field_selected_ids = self.dataset.ids;
+	        new common.SelectCreateDialog(this, {
+	            res_model: action.mass_del_field.relation,
+	            domain: new data.CompoundDomain(action.mass_del_field.domain,
+	            								[["id", "in", field_selected_ids]]),
+	            context: {},
+	            title: _t("Unlink: ") + action.mass_del_field.string + '(s)',
+	            alternative_form_view: action.mass_del_field.views ? action.mass_del_field.views.form
+	            										    	   : undefined,
+	            no_create: true,
+	            on_selected: function(element_ids) {
+	            	if (confirm(_t('Are you sure you want to unlink selected rows?.'))) {
+                        self.do_unlink_action(
+                            action,
+                            element_ids
+                        ).done(function(){
+                            defer.resolve();
+                        });
+	            	}
+	            }
+	        }).open();
+		}
+
+		return defer.promise();
+	},
+
+	do_unlink_action: function(action, selected_ids) {
+        var self = this;
+        var defer = $.Deferred();
+
+        var model_obj = new Model(action.mass_del_field.relation);
+        var vals = {};
+        vals[action.mass_del_field.relation_field] = null;
+		model_obj.call('write', [ selected_ids, vals ], {
+		    context: self.dataset.context
+		}).then(function
+		(result) {
+			defer.resolve();
+		});
+
+		return defer.promise();
+	},
+
 	/*
 	 * Devuelve los id's del campo m2o que ya existen en los reigstros del campo
 	 * o2m.
