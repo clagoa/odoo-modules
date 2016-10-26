@@ -3,7 +3,7 @@
     <data>
         <template id="assets_backend" name="web_select_after_search" inherit_id="web.assets_backend">
             <xpath expr="." position="inside">
-                <script type="text/javascript" src="/web_dialog_breadcrumbs/static/src/js/widgets.js"></script>
+                <script type="text/javascript" src="/web_select_after_search/static/src/js/widgets.js"></script>
             </xpath>
         </template>
     </data>
